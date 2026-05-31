@@ -1,98 +1,208 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useState } from "react";
+import {
+  NativeEventEmitter,
+  NativeModules,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function HomeScreen() {
+  const [amount, setAmount] = useState<string | null>(null);
+  const [transactions, setTransactions] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadTransactions = async () => {
+      const stored = await AsyncStorage.getItem("transactions");
+
+      if (stored) {
+        setTransactions(JSON.parse(stored));
+      }
+    };
+
+    loadTransactions();
+
+    const emitter = new NativeEventEmitter(
+      NativeModules.TransactionModule
+    );
+
+    const subscription = emitter.addListener(
+      "TransactionDetected",
+      (value) => {
+        console.log("TRANSACTION RECEIVED:", value);
+        setAmount(value);
+      }
+    );
+
+    return () => subscription.remove();
+  }, []);
+
+  const saveCategory = async (category: string) => {
+    if (!amount) return;
+
+    const transaction = {
+      amount,
+      category,
+      date: new Date().toISOString(),
+    };
+
+    try {
+      const existing =
+        await AsyncStorage.getItem("transactions");
+
+      const storedTransactions = existing
+        ? JSON.parse(existing)
+        : [];
+
+      storedTransactions.push(transaction);
+
+      await AsyncStorage.setItem(
+        "transactions",
+        JSON.stringify(storedTransactions)
+      );
+
+      setTransactions(storedTransactions);
+
+      console.log("SAVED:", transaction);
+
+      setAmount(null);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const totalSpent = transactions.reduce(
+    (sum, item) => sum + Number(item.amount),
+    0
+  );
+
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+    <View
+      style={{
+        flex: 1,
+        paddingTop: 80,
+        alignItems: "center",
+        backgroundColor: "#111",
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 28,
+          color: "white",
+          fontWeight: "bold",
+        }}
+      >
+        Transaction Tracker 💸
+      </Text>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+      <Text
+        style={{
+          color: "#00ff88",
+          fontSize: 22,
+          marginTop: 20,
+        }}
+      >
+        Total Spent: ₹{totalSpent}
+      </Text>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
+      {amount && (
+        <View
+          style={{
+            marginTop: 30,
+            alignItems: "center",
+          }}
+        >
+          <Text
+            style={{
+              color: "#00ff88",
+              fontSize: 32,
+              fontWeight: "bold",
+            }}
+          >
+            ₹{amount}
+          </Text>
 
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+          <Text
+            style={{
+              color: "white",
+              marginTop: 15,
+              marginBottom: 15,
+            }}
+          >
+            Select Category
+          </Text>
+
+          {[
+            "Food",
+            "Shopping",
+            "Travel",
+            "Bills",
+            "Other",
+          ].map((item) => (
+            <TouchableOpacity
+              key={item}
+              onPress={() => saveCategory(item)}
+              style={{
+                backgroundColor: "#333",
+                paddingVertical: 10,
+                paddingHorizontal: 20,
+                borderRadius: 8,
+                marginVertical: 5,
+                width: 150,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  color: "white",
+                  fontSize: 16,
+                }}
+              >
+                {item}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
+      <Text
+        style={{
+          color: "white",
+          fontSize: 22,
+          marginTop: 40,
+          marginBottom: 15,
+        }}
+      >
+        Transactions
+      </Text>
+
+      {transactions.map((item, index) => (
+        <View
+          key={index}
+          style={{
+            width: "85%",
+            backgroundColor: "#222",
+            padding: 12,
+            borderRadius: 8,
+            marginVertical: 4,
+          }}
+        >
+          <Text style={{ color: "white" }}>
+            {item.category} - ₹{item.amount}
+          </Text>
+
+          <Text
+            style={{
+              color: "#aaa",
+              fontSize: 12,
+              marginTop: 4,
+            }}
+          >
+            {new Date(item.date).toLocaleString()}
+          </Text>
+        </View>
+      ))}
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
-});
