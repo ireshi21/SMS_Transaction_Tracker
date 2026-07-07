@@ -1,16 +1,19 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  NativeEventEmitter,
-  NativeModules,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 
 export default function HomeScreen() {
   const [amount, setAmount] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
+
+  const { amount: deepLinkAmount } = useLocalSearchParams<{
+    amount?: string;
+  }>();
 
   useEffect(() => {
     const loadTransactions = async () => {
@@ -22,21 +25,14 @@ export default function HomeScreen() {
     };
 
     loadTransactions();
-
-    const emitter = new NativeEventEmitter(
-      NativeModules.TransactionModule
-    );
-
-    const subscription = emitter.addListener(
-      "TransactionDetected",
-      (value) => {
-        console.log("TRANSACTION RECEIVED:", value);
-        setAmount(value);
-      }
-    );
-
-    return () => subscription.remove();
   }, []);
+
+  useEffect(() => {
+    if (deepLinkAmount) {
+      console.log("Deep Link Amount:", deepLinkAmount);
+      setAmount(String(deepLinkAmount));
+    }
+  }, [deepLinkAmount]);
 
   const saveCategory = async (category: string) => {
     if (!amount) return;
@@ -48,8 +44,7 @@ export default function HomeScreen() {
     };
 
     try {
-      const existing =
-        await AsyncStorage.getItem("transactions");
+      const existing = await AsyncStorage.getItem("transactions");
 
       const storedTransactions = existing
         ? JSON.parse(existing)
@@ -63,10 +58,9 @@ export default function HomeScreen() {
       );
 
       setTransactions(storedTransactions);
+      setAmount(null);
 
       console.log("SAVED:", transaction);
-
-      setAmount(null);
     } catch (error) {
       console.log(error);
     }
