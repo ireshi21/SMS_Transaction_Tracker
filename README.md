@@ -1,56 +1,29 @@
-# Welcome to your Expo app 👋
+# Transaction Tracker
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A React Native Android application that automatically detects transaction SMS messages, extracts transaction amounts, and enables users to categorize and track expenses without manual entry. The application combines native Android development in Kotlin with a React Native frontend to provide real-time expense tracking and persistent local storage.
 
-## Get started
+## Features
 
-1. Install dependencies
+* Detects incoming transaction SMS messages automatically.
+* Extracts transaction amounts using regex-based parsing.
+* Displays Android notifications for newly detected transactions.
+* Allows users to categorize transactions into Food, Shopping, Travel, Bills, and Other.
+* Stores categorized transactions locally.
+* Displays transaction history and total expenditure.
+* Bridges native Android functionality with React Native for real-time UI updates.
 
-   ```bash
-   npm install
-   ```
 
-2. Start the app
+## How It Works
 
-   ```bash
-   npx expo start
-   ```
+1. Android's BroadcastReceiver listens for incoming SMS messages in the background.
+2. Transaction SMS messages are identified using keyword matching.
+3. Regex-based parsing extracts the transaction amount.
+4. The native Kotlin module sends the parsed transaction data to React Native through a custom Native Module.
+5. React Native immediately updates the interface and displays the detected transaction.
+6. The application generates an Android notification, allowing users to quickly open the app and categorize the transaction.
+7. Once categorized, the transaction is stored locally using AsyncStorage.
+8. On launch, previously stored transactions are loaded and displayed in the dashboard.
 
-In the output, you'll find options to open the app in a
+## Screenshots
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
