@@ -26,4 +26,5 @@ A React Native Android application that automatically detects transaction SMS me
 
 ## Screenshots
 
+<img width="1080" height="498" alt="image" src="https://github.com/user-attachments/assets/89a63275-e2f2-4445-82b0-17c36f862d0e" />
 
